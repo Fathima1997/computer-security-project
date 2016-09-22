@@ -10,6 +10,7 @@ CFLAGS   := $(CFLAGS) $(COMMON)
 CC       := gcc
 LDADD    := -lcrypto -lssl -lgmp
 LD       := $(CC)
+LDFLAGS  := -L/usr/local/lib/
 DEFS     :=
 ifeq ($(shell uname),Linux)
 DEFS += -DLINUX
@@ -33,13 +34,13 @@ $(OBJECTS) : %.o : %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGETS) : $(IMPL) prf.o
-	$(LD) -o $@ $^ $(LDADD)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDADD)
 
 tests : $(TESTS)
 .PHONY : tests
 
 $(TESTS) : % : %.o $(filter-out kem-enc.o,$(IMPL)) prf.o
-	$(LD) -o $@ $^ $(LDADD)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDADD)
 
 .PHONY : clean
 clean :
