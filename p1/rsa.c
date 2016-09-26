@@ -52,10 +52,37 @@ int zFromFile(FILE* f, mpz_t x)
 int rsa_keyGen(size_t keyBits, RSA_KEY* K)
 {
 	rsa_initKey(K);
+    
 	/* TODO: write this.  Use the prf to get random byte strings of
 	 * the right length, and then test for primality (see the ISPRIME
 	 * macro above).  Once you've found the primes, set up the other
 	 * pieces of the key ({en,de}crypting exponents, and n=pq). */
+    
+    //set p and q
+    
+    //divide by 8 to alloc num of bytes??
+    unsigned char p[keyBits],q[keyBits];
+    getPrime(p, keyBits);
+    getPrime(q, keyBits);
+    K->p = p;
+    K->q = q;
+    
+    K->n = K->p * K->q;
+    
+    unsigned char t[keyBits];
+    mpz_multi(t, p, q);
+    
+    unsigned char e[keyBits], temp[keyBits];
+    
+    //not sure if i'm doing this correct ?
+    do{
+        mpz_gcd(e, randBytes(temp,keyBits), t);
+    }while (mpz_cmp(e,1));
+    
+    K->e = e;
+    
+    mpz_invert(K->d, K->e , t);
+    
 	return 0;
 }
 
