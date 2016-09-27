@@ -97,15 +97,22 @@ size_t rsa_encrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 
     Z2BYTES(outBuf, len, outInt);
 
-	/* TODO: write this.  Use BYTES2Z to get integers, and then
-	 * Z2BYTES to write the output buffer. */
-	return 0; /* TODO: return should be # bytes written */
+	return len;
 }
+
 size_t rsa_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 		RSA_KEY* K)
 {
-	/* TODO: write this.  See remarks above. */
-	return 0;
+
+    mpz_t inInt;
+    BYTES2Z(inInt, inBuf, len);
+
+    mpz_t outInt;
+    mpz_powm(outInt, inInt, K->d, K->n);
+
+    Z2BYTES(outBuf, len, outInt);
+
+	return len;
 }
 
 size_t rsa_numBytesN(RSA_KEY* K)
