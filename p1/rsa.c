@@ -64,31 +64,22 @@ int rsa_keyGen(size_t keyBits, RSA_KEY* K)
 	 * macro above).  Once you've found the primes, set up the other
 	 * pieces of the key ({en,de}crypting exponents, and n=pq). */
 
-    //set p and q
+    setPrime(K->p, keyBits);
+    setPrime(K->q, keyBits);
 
-    //divide by 8 to alloc num of bytes??
-    unsigned char p[keyBits],q[keyBits];
-    setPrime(p, keyBits);
-    setPrime(q, keyBits);
-    
-    K->p = p;
-    K->q = q;
+    mpz_mul(K->n, K->p, K->q);
 
-    mpz_mul(K->n, p, q);
-
-    unsigned char t[keyBits];
-    mpz_mul(t, p, q);
-
-    unsigned char e[keyBits], temp[keyBits];
+    mpz_t phi;
+    mpz_mul(phi, K->p, K->q);
 
     //not sure if i'm doing this correct ?
+    mpz_t temp;
     do{
-        mpz_gcd(e, randBytes(temp,keyBits), t);
-    }while (mpz_cmp(e,1));
+        mpz_gcd(K->e, randBytes(temp,keyBits), phi);
+    }while (mpz_cmp(K->e,1));
 
-    K->e = e;
 
-    mpz_invert(K->d, K->e , t);
+    mpz_invert(K->d, K->e , phi);
 
 	return 0;
 }
