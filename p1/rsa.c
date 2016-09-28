@@ -49,6 +49,12 @@ int zFromFile(FILE* f, mpz_t x)
 	return 0;
 }
 
+void setPrime(unsigned char* output, size_t bits){
+    do{
+        randBytes(output, bits);
+    }while (!ISPRIME(output));
+}
+
 int rsa_keyGen(size_t keyBits, RSA_KEY* K)
 {
 	rsa_initKey(K);
@@ -62,15 +68,16 @@ int rsa_keyGen(size_t keyBits, RSA_KEY* K)
 
     //divide by 8 to alloc num of bytes??
     unsigned char p[keyBits],q[keyBits];
-    getPrime(p, keyBits);
-    getPrime(q, keyBits);
+    setPrime(p, keyBits);
+    setPrime(q, keyBits);
+    
     K->p = p;
     K->q = q;
 
-    K->n = K->p * K->q;
+    mpz_mul(K->n, p, q);
 
     unsigned char t[keyBits];
-    mpz_multi(t, p, q);
+    mpz_mul(t, p, q);
 
     unsigned char e[keyBits], temp[keyBits];
 
