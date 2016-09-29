@@ -49,12 +49,14 @@ int zFromFile(FILE* f, mpz_t x)
 	return 0;
 }
 
-void setPrime(unsigned char* outputBuf, size_t bits){
-    mpz_t outputInt;
+void setPrime(mpz_t* prime, size_t bits){
+    unsigned char* buf = malloc(bits);
     do{
-        randBytes(outputBuf, bits);
-        BYTES2Z(outputInt, outputBuf, bits);
-    }while (!ISPRIME(outputInt));
+        randBytes(buf, bits);
+        printf("%d\n",buf);
+    }while (!ISPRIME(*prime));
+    BYTES2Z(*prime, buf, bits);
+    free(buf);
 }
 
 int rsa_keyGen(size_t keyBits, RSA_KEY* K)
@@ -65,14 +67,8 @@ int rsa_keyGen(size_t keyBits, RSA_KEY* K)
 	 * the right length, and then test for primality (see the ISPRIME
 	 * macro above).  Once you've found the primes, set up the other
 	 * pieces of the key ({en,de}crypting exponents, and n=pq). */
-    unsigned char* pBuf = malloc(keyBits);
-    unsigned char* qBuf = malloc(keyBits);
-
-    setPrime(pBuf, keyBits);
-    setPrime(qBuf, keyBits);
-
-    BYTES2Z(K->p, pBuf, keyBits);
-    BYTES2Z(K->q, qBuf, keyBits);
+    setPrime(&K->p, keyBits);
+    setPrime(&K->q, keyBits);
 
     mpz_mul(K->n, K->p, K->q);
 
@@ -94,8 +90,6 @@ int rsa_keyGen(size_t keyBits, RSA_KEY* K)
 
     mpz_invert(K->d, K->e , phi);
 
-    free(pBuf);
-    free(qBuf);
     free(tempBuf);
 	return 0;
 }
