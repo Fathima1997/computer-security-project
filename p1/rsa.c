@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include "rsa.h"
 #include "prf.h"
 
@@ -49,14 +50,15 @@ int zFromFile(FILE* f, mpz_t x)
 	return 0;
 }
 
-void setPrime(mpz_t* prime, size_t bits){
-    unsigned char* buf = malloc(bits);
+void setPrime(mpz_t prime, size_t bits){
+    size_t bytes = bits / CHAR_BIT;
+    unsigned char* buf = malloc(bytes);
     do{
-        randBytes(buf, bits);
-        printf("%d\n",buf);
-    }while (!ISPRIME(*prime));
-    BYTES2Z(*prime, buf, bits);
+        randBytes(buf, bytes);
+        BYTES2Z(prime, buf, bytes);
+    }while (!ISPRIME(prime));
     free(buf);
+    printf("Freeing");
 }
 
 int rsa_keyGen(size_t keyBits, RSA_KEY* K)
@@ -67,26 +69,36 @@ int rsa_keyGen(size_t keyBits, RSA_KEY* K)
 	 * the right length, and then test for primality (see the ISPRIME
 	 * macro above).  Once you've found the primes, set up the other
 	 * pieces of the key ({en,de}crypting exponents, and n=pq). */
-    setPrime(&K->p, keyBits);
-    setPrime(&K->q, keyBits);
 
+    setPrime(K->p, keyBits);
+    setPrime(K->q, keyBits);
     mpz_mul(K->n, K->p, K->q);
 
     mpz_t phi;
-    mpz_mul(phi, K->p, K->q);
+    mpz_t qSubOne;
+    mpz_t pSubOne;
 
-    //not sure if i'm doing this correct ?
+    mpz_init(phi); mpz_set_ui(phi,0);
+    mpz_init(qSubOne); mpz_set_ui(qSubOne, 0);
+    mpz_init(pSubOne); mpz_set_ui(pSubOne, 0);
+
+    mpz_sub_ui(pSubOne, K->p, 1);
+    mpz_sub_ui(qSubOne, K->q, 1);
+    mpz_mul(phi, pSubOne, qSubOne);
+
+    /*//not sure if i'm doing this correct ?*/
     mpz_t temp;
+    mpz_init(temp);
     unsigned char* tempBuf = malloc(keyBits);
 
-    mpz_t oneZ;
-    mpz_set_ui(oneZ, 1);
+    mpz_t one;
+    mpz_init(one); mpz_set_ui(one, 1);
 
     do{
         randBytes(tempBuf,keyBits);
         BYTES2Z(temp, tempBuf, keyBits);
         mpz_gcd(K->e, temp, phi);
-    }while (mpz_cmp(K->e, oneZ));
+    }while (mpz_cmp(K->e, one));
 
     mpz_invert(K->d, K->e , phi);
 
@@ -98,9 +110,12 @@ size_t rsa_encrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 		RSA_KEY* K)
 {
     mpz_t inInt;
+    mpz_init(inInt);
+
     BYTES2Z(inInt, inBuf, len);
 
     mpz_t outInt;
+    mpz_init(outInt);
     mpz_powm(outInt, inInt, K->e, K->n);
 
     Z2BYTES(outBuf, len, outInt);
@@ -113,9 +128,12 @@ size_t rsa_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 {
 
     mpz_t inInt;
+    mpz_init(inInt);
+
     BYTES2Z(inInt, inBuf, len);
 
     mpz_t outInt;
+    mpz_init(outInt);
     mpz_powm(outInt, inInt, K->d, K->n);
 
     Z2BYTES(outBuf, len, outInt);
