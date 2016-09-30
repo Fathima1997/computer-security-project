@@ -58,7 +58,6 @@ void setPrime(mpz_t prime, size_t bits){
         BYTES2Z(prime, buf, bytes);
     }while (!ISPRIME(prime));
     free(buf);
-    printf("Freeing");
 }
 
 int rsa_keyGen(size_t keyBits, RSA_KEY* K)
