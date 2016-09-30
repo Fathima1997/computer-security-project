@@ -77,9 +77,9 @@ int rsa_keyGen(size_t keyBits, RSA_KEY* K)
     mpz_t qSubOne;
     mpz_t pSubOne;
 
-    mpz_init(phi); mpz_set_ui(phi,0);
-    mpz_init(qSubOne); mpz_set_ui(qSubOne, 0);
-    mpz_init(pSubOne); mpz_set_ui(pSubOne, 0);
+    mpz_init(phi);
+    mpz_init(qSubOne);
+    mpz_init(pSubOne);
 
     mpz_sub_ui(pSubOne, K->p, 1);
     mpz_sub_ui(qSubOne, K->q, 1);
