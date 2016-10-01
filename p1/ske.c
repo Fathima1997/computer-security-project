@@ -2,6 +2,7 @@
 #include "prf.h"
 #include <openssl/sha.h>
 #include <openssl/evp.h>
+#include <openssl/err.h>
 #include <openssl/hmac.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -129,9 +130,9 @@ size_t ske_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	 for(int i=0; i<16; i++) { IV[i] = i; }
 
 	 int adjustLen = len - HM_LEN - 16;
-	 unsigned char cyphertext[adjustLen]
+	 unsigned char cyphertext[adjustLen];
 	 for(int i=0; i<adjustLen; i++) {
-		 cyphertext[i] = inBuf[i+16]
+		 cyphertext[i] = inBuf[i+16];
 	 }
 
 	 EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
@@ -146,7 +147,7 @@ size_t ske_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 		 ERR_print_errors_fp(stderr);
 	 }
 
-	 return 0;
+	 return nWritten;
 }
 size_t ske_decrypt_file(const char* fnout, const char* fnin,
 		SKE_KEY* K, size_t offset_in)
