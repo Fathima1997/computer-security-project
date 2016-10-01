@@ -79,7 +79,7 @@ size_t ske_encrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	 * You can assume outBuf has enough space for the result. */
 
 	 if(IV == NULL) {
-		 for(int i=0; i<16; i++) { IV[i] = i;}
+		 for(int i=0; i<16; i++) { IV[i] = i; }
 	 }
 	 memcpy(outBuf, IV, 16);
 
@@ -117,7 +117,36 @@ size_t ske_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	 * Oh, and also, return -1 if the ciphertext is found invalid.
 	 * Otherwise, return the number of bytes written.  See aes-example.c
 	 * for how to do basic decryption. */
-	return 0;
+
+	 unsigned char hmac[HM_LEN];
+	 HMAC(EVP_sha256(), K->hmacKey, HM_LEN, inBuf, len-HM_LEN, hmac, NULL);
+
+	 for(int i=0; i<HM_LEN; i++) {
+		 if(hmac[i] != inBuf[len-HM_LEN+i]) { return 0; }
+	 }
+
+	 unsigned char IV[16];
+	 for(int i=0; i<16; i++) { IV[i] = i; }
+
+	 int adjustLen = len - HM_LEN - 16;
+	 unsigned char cyphertext[adjustLen]
+	 for(int i=0; i<adjustLen; i++) {
+		 cyphertext[i] = inBuf[i+16]
+	 }
+
+	 EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	 if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_ctr(), 0, K->aesKey, IV)) {
+		 ERR_print_errors_fp(stderr);
+	 }
+
+	 size_t cyphertextLen = adjustLen;
+
+	 int nWritten = 0;
+	 if(1 != EVP_DecryptUpdate(ctx, outBuf, &nWritten, cyphertext, cyphertextLen)) {
+		 ERR_print_errors_fp(stderr);
+	 }
+
+	 return 0;
 }
 size_t ske_decrypt_file(const char* fnout, const char* fnin,
 		SKE_KEY* K, size_t offset_in)
