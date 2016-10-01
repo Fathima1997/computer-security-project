@@ -93,13 +93,13 @@ size_t ske_encrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	 }
 	 EVP_CIPHER_CTX_free(ctx);
 
-	 int totalLen = 16 + nWritten + 32;
+	 int totalLen = nWritten + 16 + HM_LEN;
 	 unsigned char newBuf[nWritten];
 	 memcpy(newBuf, &outBuf[16], nWritten);
 
-	 unsigned char* HMAC_Buf = malloc(32);
-	 HMAC(EVP_sha256(), K->hmacKey, 32, outBuf, nWritten+16, HMAC_Buf, NULL);
-	 memcpy(&outBuf[nWritten+16], HMAC_Buf, 32);
+	 unsigned char* HMAC_Buf = malloc(HM_LEN);
+	 HMAC(EVP_sha256(), K->hmacKey, HM_LEN, outBuf, nWritten+16, HMAC_Buf, NULL);
+	 memcpy(&outBuf[nWritten+16], HMAC_Buf, HM_LEN);
 
 	 return totalLen; /* TODO: should return number of bytes written, which
 	             				 hopefully matches ske_getOutputLen(...). */
