@@ -77,8 +77,32 @@ size_t ske_encrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	/* TODO: finish writing this.  Look at ctr_example() in aes-example.c
 	 * for a hint.  Also, be sure to setup a random IV if none was given.
 	 * You can assume outBuf has enough space for the result. */
-	return 0; /* TODO: should return number of bytes written, which
-	             hopefully matches ske_getOutputLen(...). */
+
+	 if(IV == NULL) {
+		 for(int i=0; i<16; i++) { IV[i] = i;}
+	 }
+	 memcpy(outBuf, IV, 16);
+
+	 EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	 if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), 0, K->aesKey, IV)) {
+		 ERR_print_errors_fp(stderr);
+	 }
+	 int nWritten;
+	 if(1 != EVP_EncryptUpdate(ctx, outBuf+16, &nWritten, inBuf, len)) {
+		 ERR_print_errors_fp(stderr);
+	 }
+	 EVP_CIPHER_CTX_free(ctx);
+
+	 int totalLen = 16 + nWritten + 32;
+	 unsigned char newBuf[nWritten];
+	 memcpy(newBuf, &outBuf[16], nWritten);
+
+	 unsigned char* HMAC_Buf = malloc(32);
+	 HMAC(EVP_sha256(), K->hmacKey, 32, outBuf, nWritten+16, HMAC_Buf, NULL);
+	 memcpy(&outBuf[nWritten+16], HMAC_Buf, 32);
+
+	 return totalLen; /* TODO: should return number of bytes written, which
+	             				 hopefully matches ske_getOutputLen(...). */
 }
 size_t ske_encrypt_file(const char* fnout, const char* fnin,
 		SKE_KEY* K, unsigned char* IV, size_t offset_out)
