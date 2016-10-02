@@ -130,9 +130,9 @@ size_t ske_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	 memcpy(IV, inBuf, 16);
 
 	 int adjustLen = len - HM_LEN - 16;
-	 unsigned char cyphertext[adjustLen];
+	 unsigned char ciphertext[adjustLen];
 	 for(int i=0; i<adjustLen; i++) {
-		 cyphertext[i] = inBuf[i+16];
+		 ciphertext[i] = inBuf[i+16];
 	 }
 
 	 EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
@@ -140,10 +140,10 @@ size_t ske_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 		 ERR_print_errors_fp(stderr);
 	 }
 
-	 size_t cyphertextLen = adjustLen;
+	 size_t ciphertextLen = adjustLen;
 
 	 int nWritten = 0;
-	 if(1 != EVP_DecryptUpdate(ctx, outBuf, &nWritten, cyphertext, cyphertextLen)) {
+	 if(1 != EVP_DecryptUpdate(ctx, outBuf, &nWritten, ciphertext, ciphertextLen)) {
 		 ERR_print_errors_fp(stderr);
 	 }
 
