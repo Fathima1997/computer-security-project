@@ -113,14 +113,14 @@ size_t ske_encrypt_file(const char* fnout, const char* fnin,
 	 int fdin  = open(fnin, O_RDONLY);
 
 	 struct stat statBuf;
-	 unsigned char *pa;
+	 char *pa;
 	 pa = mmap(NULL, statBuf.st_size, PROT_READ, MAP_PRIVATE, fdin, 0); // mmap() establish a mapping between a process address space and a file
 
 	 size_t fdinLen = strlen(pa) + 1;
 	 size_t ciphertextLen = ske_getOutputLen(fdinLen);
 
 	 unsigned char* ciphertext = malloc(ciphertextLen+1);
-	 size_t encryptLen = ske_encrypt(ciphertext, pa, fdinLen, K, IV);
+	 size_t encryptLen = ske_encrypt(ciphertext, (unsigned char*)pa, fdinLen, K, IV);
 
 	 int fdout = open(fnout, O_CREAT | O_RDWR, S_IRWXU);
 	 write(fdout, ciphertext, encryptLen);
