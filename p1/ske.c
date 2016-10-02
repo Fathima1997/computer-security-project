@@ -109,7 +109,23 @@ size_t ske_encrypt_file(const char* fnout, const char* fnin,
 		SKE_KEY* K, unsigned char* IV, size_t offset_out)
 {
 	/* TODO: write this.  Hint: mmap. */
-	return 0;
+
+	 int fdin  = open(fnin, O_RDONLY);
+
+	 struct stat statBuf;
+	 unsigned char *pa;
+	 pa = mmap(NULL, statBuf.st_size, PROT_READ, MAP_PRIVATE, fdin, 0); // mmap() establish a mapping between a process address space and a file
+
+	 size_t fdinLen = strlen(pa) + 1;
+	 size_t ciphertextLen = ske_getOutputLen(fdinLen);
+
+	 unsigned char* ciphertext = malloc(ciphertextLen+1);
+	 size_t encryptLen = ske_encrypt(ciphertext, pa, fdinLen, K, IV);
+
+	 int fdout = open(fnout, O_CREAT | O_RDWR, S_IRWXU);
+	 write(fdout, ciphertext, encryptLen);
+
+	 return 0;
 }
 size_t ske_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 		SKE_KEY* K)
@@ -153,5 +169,18 @@ size_t ske_decrypt_file(const char* fnout, const char* fnin,
 		SKE_KEY* K, size_t offset_in)
 {
 	/* TODO: write this. */
-	return 0;
+
+	 int fdin  = open(fnin, O_RDONLY);
+
+	 struct stat statBuf;
+	 unsigned char *pa;
+	 pa = mmap(NULL, statBuf.st_size, PROT_READ, MAP_PRIVATE, fdin, 0);
+
+	 unsigned char* plaintext = malloc(statBuf.st_size);
+	 ske_decrypt(plaintext, pa, statBuf.st_size, K);
+
+	 int fdout = open(fnout, O_CREAT | O_RDWR, S_IRWXU);
+	 write(fdout, plaintext, statBuf.st_size);
+
+	 return 0;
 }
