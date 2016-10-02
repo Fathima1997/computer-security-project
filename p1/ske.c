@@ -123,7 +123,7 @@ size_t ske_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	 HMAC(EVP_sha256(), K->hmacKey, HM_LEN, inBuf, len-HM_LEN, hmac, NULL);
 
 	 for(int i=0; i<HM_LEN; i++) {
-		 if(hmac[i] != inBuf[len-HM_LEN+i]) { return 0; }
+		 if(hmac[i] != inBuf[len-HM_LEN+i]) { return -1; }
 	 }
 
 	 unsigned char IV[16];
