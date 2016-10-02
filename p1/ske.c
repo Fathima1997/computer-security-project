@@ -115,13 +115,17 @@ size_t ske_encrypt_file(const char* fnout, const char* fnin,
 	 if(fdin == -1 || fdout == -1) { return -1; }
 
 	 struct stat statBuf;
+	 if(fstat(fdin, &statBuf) == -1 || statBuf.st_size == 0) { return -1; }
+
 	 char *pa;
 	 pa = mmap(NULL, statBuf.st_size, PROT_READ, MAP_PRIVATE, fdin, 0); // mmap() establish a mapping between a process address space and a file
+	 if(pa == MAP_FAILED) { return -1; }
 
 	 size_t fdinLen = strlen(pa) + 1;
 	 size_t ciphertextLen = ske_getOutputLen(fdinLen);
 
 	 unsigned char* ciphertext = malloc(ciphertextLen+1);
+	 if(IV == NULL) { randBytes(IV, 16); }
 	 size_t encryptLen = ske_encrypt(ciphertext, (unsigned char*)pa, fdinLen, K, IV);
 	 write(fdout, ciphertext, encryptLen);
 
@@ -170,13 +174,16 @@ size_t ske_decrypt_file(const char* fnout, const char* fnin,
 {
 	/* TODO: write this. */
 
-	 int fdin  = open(fnin, O_RDONLY);
+	 int fdin  = open(fnin, O_RDONLY)									 ;
 	 int fdout = open(fnout, O_CREAT | O_RDWR, S_IRWXU);
 	 if(fdin == -1 || fdout == -1) { return -1; }
 
 	 struct stat statBuf;
+	 if(fstat(fdin, &statBuf) == -1 || statBuf.st_size == 0) { return -1; }
+
 	 unsigned char *pa;
 	 pa = mmap(NULL, statBuf.st_size, PROT_READ, MAP_PRIVATE, fdin, 0);
+	 if(pa == MAP_FAILED) { return -1; }
 
 	 unsigned char* plaintext = malloc(statBuf.st_size);
 	 ske_decrypt(plaintext, pa, statBuf.st_size, K);
