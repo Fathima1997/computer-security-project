@@ -185,9 +185,9 @@ size_t ske_decrypt_file(const char* fnout, const char* fnin,
 	 pa = mmap(NULL, statBuf.st_size, PROT_READ, MAP_PRIVATE, fdin, 0);
 	 if(pa == MAP_FAILED) { return -1; }
 
-	 unsigned char* plaintext = malloc(statBuf.st_size);
-	 ske_decrypt(plaintext, pa, statBuf.st_size, K);
-	 write(fdout, plaintext, statBuf.st_size);
+	 char* plaintext = malloc(statBuf.st_size-16-HM_LEN);
+	 ske_decrypt((unsigned char*)plaintext, pa, statBuf.st_size, K);
+	 write(fdout, plaintext, statBuf.st_size-16-HM_LEN);
 
 	 return 0;
 }
