@@ -80,7 +80,7 @@ size_t ske_encrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	 * You can assume outBuf has enough space for the result. */
 
 	 if(IV == NULL) {
-		 for(int i=0; i<16; i++) { IV[i] = i; }
+	    randBytes(IV, 16);
 	 }
 	 memcpy(outBuf, IV, 16);
 
@@ -127,7 +127,7 @@ size_t ske_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	 }
 
 	 unsigned char IV[16];
-	 for(int i=0; i<16; i++) { IV[i] = i; }
+	 memcpy(IV, inBuf, 16);
 
 	 int adjustLen = len - HM_LEN - 16;
 	 unsigned char cyphertext[adjustLen];
