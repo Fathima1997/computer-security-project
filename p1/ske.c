@@ -110,7 +110,9 @@ size_t ske_encrypt_file(const char* fnout, const char* fnin,
 {
 	/* TODO: write this.  Hint: mmap. */
 
-	 int fdin  = open(fnin, O_RDONLY);
+	 int fdin  = open(fnin, O_RDONLY)									 ;
+	 int fdout = open(fnout, O_CREAT | O_RDWR, S_IRWXU);
+	 if(fdin == -1 || fdout == -1) { return -1; }
 
 	 struct stat statBuf;
 	 char *pa;
@@ -121,8 +123,6 @@ size_t ske_encrypt_file(const char* fnout, const char* fnin,
 
 	 unsigned char* ciphertext = malloc(ciphertextLen+1);
 	 size_t encryptLen = ske_encrypt(ciphertext, (unsigned char*)pa, fdinLen, K, IV);
-
-	 int fdout = open(fnout, O_CREAT | O_RDWR, S_IRWXU);
 	 write(fdout, ciphertext, encryptLen);
 
 	 return 0;
@@ -171,6 +171,8 @@ size_t ske_decrypt_file(const char* fnout, const char* fnin,
 	/* TODO: write this. */
 
 	 int fdin  = open(fnin, O_RDONLY);
+	 int fdout = open(fnout, O_CREAT | O_RDWR, S_IRWXU);
+	 if(fdin == -1 || fdout == -1) { return -1; }
 
 	 struct stat statBuf;
 	 unsigned char *pa;
@@ -178,8 +180,6 @@ size_t ske_decrypt_file(const char* fnout, const char* fnin,
 
 	 unsigned char* plaintext = malloc(statBuf.st_size);
 	 ske_decrypt(plaintext, pa, statBuf.st_size, K);
-
-	 int fdout = open(fnout, O_CREAT | O_RDWR, S_IRWXU);
 	 write(fdout, plaintext, statBuf.st_size);
 
 	 return 0;
