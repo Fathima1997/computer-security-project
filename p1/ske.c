@@ -187,7 +187,13 @@ size_t ske_decrypt_file(const char* fnout, const char* fnin,
 
 	 char* plaintext = malloc(statBuf.st_size-16-HM_LEN);
 	 ske_decrypt((unsigned char*)plaintext, pa, statBuf.st_size, K);
-	 write(fdout, plaintext, statBuf.st_size-16-HM_LEN);
+	 //write(fdout, plaintext, statBuf.st_size-16-HM_LEN);
+	 FILE *pFile = fopen(fnout, "w");
+	 if(pFile == NULL) { return -1; }
+	 else {
+		 fputs(plaintext, pFile);
+		 fclose(pFile);
+	 }
 
 	 return 0;
 }
