@@ -7,6 +7,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/mman.h>
 #include <openssl/sha.h>
 
 #include "ske.h"
@@ -52,11 +53,52 @@ enum modes {
 
 #define HASHLEN 32 /* for sha256 */
 
+
 int kem_encrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 {
 	/* TODO: encapsulate random symmetric key (SK) using RSA and SHA256;
 	 * encrypt fnIn with SK; concatenate encapsulation and cihpertext;
 	 * write to fnOut. */
+	
+	size_t len = rsa_numBytesN(K); //length of key
+	unsigned char* x = malloc(len);
+
+	//generate SK
+	randBytes(x, len);	
+	SKE_KEY SK;
+	ske_keyGen(&SK, x, len);
+
+	//encapsulate SK using RSA
+	unsigned char* encapSK = malloc(len);
+ 	size_t encapLen = rsa_encrypt(encapSK, SK.hmacKey, len, K);
+
+	//in and out files
+	int fdin  = open(fnIn, O_RDONLY);
+	int fdout = open(fnOut, O_CREAT | O_RDWR, S_IRWXU);
+	if(fdin == -1 || fdout == -1) return -1;
+
+	struct stat statBuf;
+	if(fstat(fdin, &statBuf) == -1 || statBuf.st_size == 0) { return -1; }
+	char *pa;
+	pa = mmap(NULL, statBuf.st_size, PROT_READ, MAP_PRIVATE, fdin, 0); 
+	if(pa == MAP_FAILED) { return -1; }
+	
+	//encrypt plaintext with SK
+	unsigned char* cipher = malloc(strlen(pa) + 1);
+	size_t skeLen = ske_encrypt(cipher, (unsigned char*)pa, strlen(pa) + 1, &SK, NULL);
+
+	//concat encap and cipher
+	unsigned char* merged = malloc(skeLen + encapLen + 1);
+	for(int i = 0; i < encapLen; i++){
+		merged[i] = encapSK[i];
+	}
+	
+	for(int i = 0; i < skeLen; i++){
+		merged[i] = cipher[i];
+	}
+	
+	//write to file
+	write(fdout, merged, skeLen + encapLen);
 	return 0;
 }
 
@@ -67,6 +109,37 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 	/* step 1: recover the symmetric key */
 	/* step 2: check decapsulation */
 	/* step 3: derive key from ephemKey and decrypt data. */
+	return 0;
+}
+
+int generate(char* fnOut, size_t nBits){
+	RSA_KEY K;
+
+	//create new file with .pub extension
+	char* fPub = malloc(strlen(fnOut) + 5);
+	strcpy(fPub, fnOut);
+	strcat(fPub, ".pub");
+	
+	FILE* outPrivate = fopen(fnOut, "w");
+	FILE* outPublic = fopen(fPub, "w");
+	
+	rsa_keyGen(nBits, &K);
+	rsa_writePrivate(outPrivate, &K);
+	rsa_writePublic(outPublic, &K);
+	
+	fclose(outPrivate);
+	fclose(outPublic);
+	rsa_shredKey(&K);
+	return 0;
+}
+
+int encrypt(char* fnOut, char* fnIn){
+	FILE* keyFile = fopen(fnIn, "r");
+	RSA_KEY K;
+	rsa_readPublic(keyFile, &K); //causing seg fault 
+	//kem_encrypt(fnOut, fnIn, &K);
+	rsa_shredKey(&K);
+	fclose(keyFile);
 	return 0;
 }
 
@@ -137,10 +210,17 @@ int main(int argc, char *argv[]) {
 	/* TODO: finish this off.  Be sure to erase sensitive data
 	 * like private keys when you're done with them (see the
 	 * rsa_shredKey function). */
+	//RSA_KEY* rsaKey;
+	//rsa_initKey(rsaKey);
+
 	switch (mode) {
 		case ENC:
+			encrypt(fnOut, fnIn);
+			break;
 		case DEC:
 		case GEN:
+			generate(fnOut, nBits);
+			break;
 		default:
 			return 1;
 	}
