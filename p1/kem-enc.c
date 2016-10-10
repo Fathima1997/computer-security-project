@@ -61,13 +61,13 @@ int kem_encrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 	 * write to fnOut. */
 	size_t len = rsa_numBytesN(K); //length of key
 	unsigned char* x = malloc(len);
+	printf("size %d\n\n", len);
 
 	//generate SK
 	randBytes(x, len);	
 	SKE_KEY SK;
 	ske_keyGen(&SK, x, len);
 	
-	printf("0\n");
 
 
 	size_t encapLen = len + HASHLEN; //will be the RSA(X)|H(X)
@@ -78,16 +78,19 @@ int kem_encrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 		printf("Failed to encrypt RSA");
 		return -1;	
 	}
+
+	//print unencrypted x
+	for(int i = 0; i < len; i++){
+		printf("%d : %hu\n", i, (unsigned short)(x[i]));
+	}
 	
 
 	//create H(X)
 	unsigned char* h = malloc(HASHLEN);
 	SHA256(x, len, h);
-	
-	//set H(X)
-	for(int i = 0; i < len; i++){
-		(encap[len + i]) = h[i];
-	}
+
+	//add H(x) to back
+	memcpy(encap+len, h, HASHLEN);
 
 	//out file
 	int fdout = open(fnOut, O_CREAT | O_RDWR, S_IRWXU);
@@ -104,8 +107,9 @@ int kem_encrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 	//append to encap
 	ske_encrypt_file(fnOut, fnIn, &SK, NULL, encapLen);
 
-	//free(x);
-	//free(encap);
+	free(x);
+	free(encap);
+	free(h);
 	return 0;
 }
 
@@ -119,10 +123,11 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 
 	size_t rsaLen = rsa_numBytesN(K);
 	size_t encapLen = rsaLen + HASHLEN;
+	printf("size %d\n\n", rsaLen);
 	
 	FILE* encrypted = fopen(fnIn, "r");
 	
-	//get encapsulated RSA(X)|H(X)
+	//get encapsulated -- RSA(X)|H(X)
 	unsigned char* encap = malloc(encapLen);
 	size_t read = fread(encap, 1, encapLen, encrypted);
 	fclose(encrypted);
@@ -135,21 +140,28 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 
 	unsigned char* x = malloc(rsaLen);
 	
-	//retrieve x
+	//retrieve x from RSA(X)
 	if(rsaLen != rsa_decrypt(x, encap, rsaLen, K)){
 		printf("Failed to retrieve x");
 		return -1;
 	}
+
+	//print decrypted x
+	//for some reason decrypted x does not match original x
+	for(int i = 0; i < rsaLen; i++){
+		printf("%d : %hu\n", i, (unsigned short) (x[i]));
+	}
+	
 
 	//get H(X)
 	unsigned char* h = malloc(HASHLEN);
 	SHA256(x, rsaLen, h);
 	unsigned char* a = encap + rsaLen;
 
-	//compare it to encapsulated H(x)
+	//compare h to encapsulated H(x)
 	for(int i = 0; i < rsaLen; i++){ //not matching for some reason
-		printf("%hu\n", (unsigned short)(*h));
-		printf("%hu\n", (unsigned short)(*a));
+		//printf("%hu\n", (unsigned short)(*h));
+		//printf("%hu\n", (unsigned short)(*a));
 		if(*h != *a){
 			printf("H(x) did not match");
 			return -1;
@@ -160,8 +172,8 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 
 	SKE_KEY SK;
 	ske_keyGen(&SK, x, rsaLen);
-
 	ske_decrypt_file(fnOut, fnIn, &SK, encapLen);
+	a = NULL;
 	free(h);
 	free(x);
 	free(encap);
