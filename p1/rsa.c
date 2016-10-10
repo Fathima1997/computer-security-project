@@ -87,16 +87,16 @@ int rsa_keyGen(size_t keyBits, RSA_KEY* K)
 
     mpz_t temp;
     mpz_init(temp);
-    unsigned char* tempBuf = malloc(keyBits);
+    unsigned char* tempBuf = malloc(keyBytes);
 
     mpz_t one;
     mpz_init(one); mpz_set_ui(one, 1);
 
     do{
-        randBytes(tempBuf,keyBits);
-        BYTES2Z(temp, tempBuf, keyBits);
-        mpz_gcd(K->e, temp, phi);
-    }while (mpz_cmp(K->e, one));
+        randBytes(tempBuf,keyBytes);
+        BYTES2Z(K->e, tempBuf, keyBytes);
+        mpz_gcd(temp, K->e, phi);
+    }while (mpz_cmp(temp, one));
 
     mpz_invert(K->d, K->e , phi);
 
@@ -156,8 +156,6 @@ int rsa_initKey(RSA_KEY* K)
 
 int rsa_writePublic(FILE* f, RSA_KEY* K)
 {
-	printf("pub n : %d",K->n);
-	printf("pub e : %d",K->e);
 	/* only write n,e */
 	zToFile(f,K->n);
 	zToFile(f,K->e);
@@ -165,11 +163,11 @@ int rsa_writePublic(FILE* f, RSA_KEY* K)
 }
 int rsa_writePrivate(FILE* f, RSA_KEY* K)
 {
-	printf("pub n : %s",K->n);
-	printf("pub e : %s",K->e);
-	printf("pub p : %s",K->p);
-	printf("pub q : %d",K->q);
-	printf("pub d : %d",K->d);
+	//gmp_printf("n %Zd\n", K->n);
+	//gmp_printf("e %Zd\n", K->e);
+	//gmp_printf("p %Zd\n", K->p);
+	//gmp_printf("q %Zd\n", K->q);
+	//gmp_printf("d %Zd\n", K->d);
 	zToFile(f,K->n);
 	zToFile(f,K->e);
 	zToFile(f,K->p);
@@ -182,22 +180,24 @@ int rsa_readPublic(FILE* f, RSA_KEY* K)
 	rsa_initKey(K); /* will set all unused members to 0 */
 	zFromFile(f,K->n);
 	zFromFile(f,K->e);
-	printf("pub n : %s",K->n);
-	printf("pub e : %s",K->e);
+	//gmp_printf("n %Zd\n", K->n);
+	//gmp_printf("e %Zd\n", K->e);
 	return 0;
 }
 int rsa_readPrivate(FILE* f, RSA_KEY* K)
 {
 	rsa_initKey(K);
-	printf("0\n");
 	zFromFile(f,K->n);
-	printf("pub n : %d",K->n);
-	printf("1\n");
 	zFromFile(f,K->e);
-	printf("2\n");
 	zFromFile(f,K->p);
 	zFromFile(f,K->q);
 	zFromFile(f,K->d);
+
+	//gmp_printf("n %Zd\n", K->n);
+	//gmp_printf("e %Zd\n", K->e);
+	//gmp_printf("p %Zd\n", K->p);
+	//gmp_printf("q %Zd\n", K->q);
+	//gmp_printf("d %Zd\n", K->d);
 	return 0;
 }
 int rsa_shredKey(RSA_KEY* K)
