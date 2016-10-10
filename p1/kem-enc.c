@@ -76,14 +76,14 @@ int kem_encrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 
 	//set RSA(X)
 	if(len != rsa_encrypt(encap, x, len, K)){
-		printf("Failed to encrypt RSA");
+		printf("Failed to encrypt RSA\n");
 		return -1;
 	}
 
 	//print unencrypted x
-	for(int i = 0; i < len; i++){
-		printf("%d : %hu\n", i, (unsigned short)(x[i]));
-	}
+	/*for(int i = 0; i < len; i++){*/
+		/*printf("%d : %hu\n", i, (unsigned short)(x[i]));*/
+	/*}*/
 
 
 	//create H(X)
@@ -149,9 +149,9 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 
 	//print decrypted x
 	//for some reason decrypted x does not match original x
-	for(int i = 0; i < rsaLen; i++){
-		printf("%d : %hu\n", i, (unsigned short) (x[i]));
-	}
+	/*for(int i = 0; i < rsaLen; i++){*/
+		/*printf("%d : %hu\n", i, (unsigned short) (x[i]));*/
+	/*}*/
 
 
 	//get H(X)
@@ -160,11 +160,11 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 	unsigned char* a = encap + rsaLen;
 
 	//compare h to encapsulated H(x)
-	for(int i = 0; i < rsaLen; i++){ //not matching for some reason
+	for(int i = 0; i < HASHLEN; i++){ //not matching for some reason
 		//printf("%hu\n", (unsigned short)(*h));
 		//printf("%hu\n", (unsigned short)(*a));
 		if(*h != *a){
-			printf("H(x) did not match");
+			printf("H(x) did not match\n");
 			return -1;
 		}
 		h++;
