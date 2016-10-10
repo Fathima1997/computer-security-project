@@ -7,6 +7,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/mman.h>
 #include <openssl/sha.h>
 
@@ -64,10 +65,10 @@ int kem_encrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 	printf("size %d\n\n", len);
 
 	//generate SK
-	randBytes(x, len);	
+	randBytes(x, len);
 	SKE_KEY SK;
 	ske_keyGen(&SK, x, len);
-	
+
 
 
 	size_t encapLen = len + HASHLEN; //will be the RSA(X)|H(X)
@@ -76,14 +77,14 @@ int kem_encrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 	//set RSA(X)
 	if(len != rsa_encrypt(encap, x, len, K)){
 		printf("Failed to encrypt RSA");
-		return -1;	
+		return -1;
 	}
 
 	//print unencrypted x
 	for(int i = 0; i < len; i++){
 		printf("%d : %hu\n", i, (unsigned short)(x[i]));
 	}
-	
+
 
 	//create H(X)
 	unsigned char* h = malloc(HASHLEN);
@@ -124,14 +125,14 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 	size_t rsaLen = rsa_numBytesN(K);
 	size_t encapLen = rsaLen + HASHLEN;
 	printf("size %d\n\n", rsaLen);
-	
+
 	FILE* encrypted = fopen(fnIn, "r");
-	
+
 	//get encapsulated -- RSA(X)|H(X)
 	unsigned char* encap = malloc(encapLen);
 	size_t read = fread(encap, 1, encapLen, encrypted);
 	fclose(encrypted);
-	
+
 	//failed to read kem
 	if(read != encapLen){
 		printf("Failed to read kem");
@@ -139,7 +140,7 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 	}
 
 	unsigned char* x = malloc(rsaLen);
-	
+
 	//retrieve x from RSA(X)
 	if(rsaLen != rsa_decrypt(x, encap, rsaLen, K)){
 		printf("Failed to retrieve x");
@@ -151,7 +152,7 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 	for(int i = 0; i < rsaLen; i++){
 		printf("%d : %hu\n", i, (unsigned short) (x[i]));
 	}
-	
+
 
 	//get H(X)
 	unsigned char* h = malloc(HASHLEN);
@@ -182,7 +183,7 @@ int kem_decrypt(const char* fnOut, const char* fnIn, RSA_KEY* K)
 
 int generate(char* fnOut, size_t nBits){
 	RSA_KEY K;
-	
+
 	//create new file with .pub extension
 	char* fPub = malloc(strlen(fnOut) + 5);
 	strcpy(fPub, fnOut);
@@ -190,7 +191,7 @@ int generate(char* fnOut, size_t nBits){
 
 	FILE* outPrivate = fopen(fnOut, "w");
 	FILE* outPublic = fopen(fPub, "w");
-	
+
 	rsa_keyGen(nBits, &K);
 	rsa_writePrivate(outPrivate, &K);
 	rsa_writePublic(outPublic, &K);
@@ -211,7 +212,7 @@ int encrypt(char* fnOut, char* fnIn, char* fnKey){
 	}
 
 	RSA_KEY K;
-	rsa_readPublic(keyFile, &K); 
+	rsa_readPublic(keyFile, &K);
 	kem_encrypt(fnOut, fnIn, &K);
 	rsa_shredKey(&K);
 	fclose(keyFile);
