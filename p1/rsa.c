@@ -50,8 +50,7 @@ int zFromFile(FILE* f, mpz_t x)
 	return 0;
 }
 
-void setPrime(mpz_t prime, size_t bits){
-    size_t bytes = bits / CHAR_BIT;
+void setPrime(mpz_t prime, size_t bytes){
     unsigned char* buf = malloc(bytes);
     do{
         randBytes(buf, bytes);
@@ -69,8 +68,9 @@ int rsa_keyGen(size_t keyBits, RSA_KEY* K)
 	 * macro above).  Once you've found the primes, set up the other
 	 * pieces of the key ({en,de}crypting exponents, and n=pq). */
 
-    setPrime(K->p, keyBits);
-    setPrime(K->q, keyBits);
+    size_t keyBytes = keyBits / CHAR_BIT;
+    setPrime(K->p, keyBytes);
+    setPrime(K->q, keyBytes);
     mpz_mul(K->n, K->p, K->q);
 
     mpz_t phi;
@@ -85,19 +85,18 @@ int rsa_keyGen(size_t keyBits, RSA_KEY* K)
     mpz_sub_ui(qSubOne, K->q, 1);
     mpz_mul(phi, pSubOne, qSubOne);
 
-    /*//not sure if i'm doing this correct ?*/
     mpz_t temp;
     mpz_init(temp);
-    unsigned char* tempBuf = malloc(keyBits);
+    unsigned char* tempBuf = malloc(keyBytes);
 
     mpz_t one;
     mpz_init(one); mpz_set_ui(one, 1);
 
     do{
-        randBytes(tempBuf,keyBits);
-        BYTES2Z(temp, tempBuf, keyBits);
-        mpz_gcd(K->e, temp, phi);
-    }while (mpz_cmp(K->e, one));
+        randBytes(tempBuf,keyBytes);
+        BYTES2Z(K->e, tempBuf, keyBytes);
+        mpz_gcd(temp, K->e, phi);
+    }while (mpz_cmp(temp, one));
 
     mpz_invert(K->d, K->e , phi);
 
@@ -164,6 +163,11 @@ int rsa_writePublic(FILE* f, RSA_KEY* K)
 }
 int rsa_writePrivate(FILE* f, RSA_KEY* K)
 {
+	//gmp_printf("n %Zd\n", K->n);
+	//gmp_printf("e %Zd\n", K->e);
+	//gmp_printf("p %Zd\n", K->p);
+	//gmp_printf("q %Zd\n", K->q);
+	//gmp_printf("d %Zd\n", K->d);
 	zToFile(f,K->n);
 	zToFile(f,K->e);
 	zToFile(f,K->p);
@@ -176,6 +180,8 @@ int rsa_readPublic(FILE* f, RSA_KEY* K)
 	rsa_initKey(K); /* will set all unused members to 0 */
 	zFromFile(f,K->n);
 	zFromFile(f,K->e);
+	//gmp_printf("n %Zd\n", K->n);
+	//gmp_printf("e %Zd\n", K->e);
 	return 0;
 }
 int rsa_readPrivate(FILE* f, RSA_KEY* K)
@@ -186,6 +192,12 @@ int rsa_readPrivate(FILE* f, RSA_KEY* K)
 	zFromFile(f,K->p);
 	zFromFile(f,K->q);
 	zFromFile(f,K->d);
+
+	//gmp_printf("n %Zd\n", K->n);
+	//gmp_printf("e %Zd\n", K->e);
+	//gmp_printf("p %Zd\n", K->p);
+	//gmp_printf("q %Zd\n", K->q);
+	//gmp_printf("d %Zd\n", K->d);
 	return 0;
 }
 int rsa_shredKey(RSA_KEY* K)

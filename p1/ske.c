@@ -80,6 +80,7 @@ size_t ske_encrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
 	 * You can assume outBuf has enough space for the result. */
 
 	if(IV == NULL) {
+		IV = malloc(16);
 		randBytes(IV, 16);
 	}
 	memcpy(outBuf, IV, 16);
@@ -112,7 +113,10 @@ size_t ske_encrypt_file(const char* fnout, const char* fnin,
 
 	int fdin  = open(fnin, O_RDONLY)									 ;
 	int fdout = open(fnout, O_CREAT | O_RDWR, S_IRWXU);
-	if(fdin == -1 || fdout == -1) { return -1; }
+	if(fdin == -1 || fdout == -1) { 
+		printf("Failed to open files\n");
+		return -1; 
+	}
 
 	struct stat statBuf;
 	if(fstat(fdin, &statBuf) == -1 || statBuf.st_size == 0) { return -1; }
@@ -125,10 +129,33 @@ size_t ske_encrypt_file(const char* fnout, const char* fnin,
 	size_t ciphertextLen = ske_getOutputLen(fdinLen);
 
 	unsigned char* ciphertext = malloc(ciphertextLen+1);
-	if(IV == NULL) { randBytes(IV, 16); }
-	size_t encryptLen = ske_encrypt(ciphertext, (unsigned char*)pa, fdinLen, K, IV);
-	write(fdout, ciphertext, encryptLen);
+	
+	char freeIV = 0;
+	if(IV == NULL) { 
+		IV = malloc(16);
+		randBytes(IV, 16); 
+		freeIV = 1;
+	}
+	ssize_t encryptLen = ske_encrypt(ciphertext, (unsigned char*)pa, fdinLen, K, IV);
 
+	if(encryptLen == -1){
+		printf("Failed to encrypt\n");
+	}	
+
+	lseek(fdout, offset_out, SEEK_SET);
+	ssize_t written = write(fdout, ciphertext, encryptLen);
+	if(written == -1){
+		printf("Failed to write to file\n");
+	}
+	
+
+	munmap(pa, statBuf.st_size);
+	free(ciphertext);
+	if(freeIV > 0){
+		free(IV);
+	}
+	close(fdin);
+	close(fdout);
 	return 0;
 }
 size_t ske_decrypt(unsigned char* outBuf, unsigned char* inBuf, size_t len,
@@ -182,11 +209,11 @@ size_t ske_decrypt_file(const char* fnout, const char* fnin,
 	if(fstat(fdin, &statBuf) == -1 || statBuf.st_size == 0) { return -1; }
 
 	unsigned char *pa;
-	pa = mmap(NULL, statBuf.st_size, PROT_READ, MAP_PRIVATE, fdin, 0);
+	pa = mmap(NULL, statBuf.st_size, PROT_READ, MAP_PRIVATE, fdin, offset_in);
 	if(pa == MAP_FAILED) { return -1; }
 
-	char* plaintext = malloc(statBuf.st_size-16-HM_LEN);
-	ske_decrypt((unsigned char*)plaintext, pa, statBuf.st_size, K);
+	char* plaintext = malloc(statBuf.st_size-16-HM_LEN-offset_in);
+	ske_decrypt((unsigned char*)plaintext, pa, statBuf.st_size-offset_in, K);
 	//write(fdout, plaintext, statBuf.st_size-16-HM_LEN);
 	FILE *pFile = fopen(fnout, "w");
 	if(pFile == NULL) { return -1; }
