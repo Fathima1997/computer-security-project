@@ -125,10 +125,6 @@ Moreover, your code cannot assume additional cryptographic functionality beyond 
 
 Lastly, you must provide a Makefile and a readme if you don’t use the skeleton, and the Makefile must work on Linux.
 
-## Submission Procedure
-
-Just edit the appropriate piazza post to reflect the url of your git repository and the list of team members.
-
 # References
 
 <div id="refs" class="references">
