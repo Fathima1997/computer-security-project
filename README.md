@@ -58,7 +58,7 @@ I’d attack this in the following order:
 
 There are some basic tests for RSA and the memory buffer version of SKE (`ske_encrypt` / `ske_decrypt`) in the `tests/` directory, so those are good to start with. Once you have that working, implement the versions which operate on files. _Hint:_ For this, I would recommend `mmap`. Then you can just hand off the pointers from `mmap` to the simple versions and let the kernel do all the buffering work for you. (Nice, right?) Or if you are lazy, you can also just read the entire file contents into a (potentially huge) buffer. But Zoidberg will be mad at you.
 
-![zoidberg](https://github.com/LinfinityLab/computer-security-project/blob/master/p1/bad-code.jpg)  
+![zoidberg](https://github.com/LinfinityLab/computer-security-project/blob/master/bad-code.jpg)  
 
 #### Extra notes on the KDF for symmetric encryption
 
