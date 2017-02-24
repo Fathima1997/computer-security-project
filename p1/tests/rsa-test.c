@@ -42,6 +42,7 @@ int main() {
 		randBytes(pt,mLen-1);
 		/* encrypt, decrypt, check. */
 		ctLen = rsa_encrypt(ct,pt,mLen,&K);
+		memset(dt,0,mLen);
 		rsa_decrypt(dt,ct,ctLen,&K);
 		for (j = 0; j < mLen; j++) {
 			if (dt[j] != pt[j]) break;
