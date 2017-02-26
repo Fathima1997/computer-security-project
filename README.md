@@ -27,9 +27,6 @@ How to build such a thing? It turns out that all you need is a public key encryp
 
 There is a nice hybrid-style argument in <span class="citation">(Cramer and Shoup 2003, chap. 7)</span>, but verifying all the details would take us a little off course. Here’s the gist though: how different could the CCA2 game be if we swapped out the encapsulated key with a totally random key for the symmetric encryption? Not very! Even if we gave the adversary the ability to run decapsulation queries, he can’t distinguish the cases (this is exactly our definition of CCA2 for a KEM). But now if the key is random, this is precisely the situation for which we’ve proved CCA2 security of the symmetric scheme. Voila.
 
-## Details
-
-I’ve given you a skeleton in C, but you can write the program in other languages if you want, **as long as you follow the guidelines**. Look at the [section on other languages](#other-lang) for details.
 
 ### Regarding the C skeleton
 
