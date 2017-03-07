@@ -4,7 +4,7 @@
 
 In this assignment you are asked to build a public key cryptosystem using a _key encapsulation mechanism_. The idea is that by using a hybrid encryption scheme (combining an asymmetric and symmetric system), we can produce a highly efficient public-key system, thus getting the best of both worlds.
 
-### Goals for the student
+### Goals
 
 *   Understand different security definitions for cryptosystems.
 *   Hands on experience programming with a variety of crypto building blocks (symmetric encryption, asymmetric encryption, hashing, MACs…).
